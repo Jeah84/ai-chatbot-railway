@@ -1,2 +1,2 @@
-web: npm run build && npm start
+web: npm start
 worker: npm run db:migrate
