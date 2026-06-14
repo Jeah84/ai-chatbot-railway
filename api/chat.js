@@ -1,13 +1,11 @@
 const express = require('express');
 const { v4: uuidv4 } = require('uuid');
-const OpenAI = require('openai').default;
+const { GoogleGenerativeAI } = require('@google/generative-ai');
 const { rateLimitMiddleware } = require('../lib/redis');
 
 const router = express.Router();
 
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
 const SYSTEM_PROMPT = `You are a helpful customer support assistant for an e-commerce business.
 Your role is to:
@@ -64,7 +62,7 @@ router.post('/message', rateLimitMiddleware, async (req, res) => {
       VALUES (${conversationId}, 'user', ${message})
     `;
 
-    // Get conversation history
+    // Get conversation history (last 10 messages)
     const history = await req.db`
       SELECT role, content FROM messages
       WHERE conversation_id = ${conversationId}
@@ -72,9 +70,10 @@ router.post('/message', rateLimitMiddleware, async (req, res) => {
       LIMIT 10
     `;
 
-    const messages = history.map(msg => ({
-      role: msg.role,
-      content: msg.content,
+    // Build Gemini chat history (all messages except the last user message)
+    const chatHistory = history.slice(0, -1).map(msg => ({
+      role: msg.role === 'assistant' ? 'model' : 'user',
+      parts: [{ text: msg.content }],
     }));
 
     // Stream response
@@ -82,21 +81,24 @@ router.post('/message', rateLimitMiddleware, async (req, res) => {
     res.setHeader('Cache-Control', 'no-cache');
     res.setHeader('Connection', 'keep-alive');
 
-    let assistantMessage = '';
-
-    const stream = await openai.chat.completions.create({
-      model: 'gpt-4o-mini',
-      messages: [
-        { role: 'system', content: SYSTEM_PROMPT },
-        ...messages,
-      ],
-      stream: true,
-      temperature: 0.7,
-      max_tokens: 500,
+    const model = genAI.getGenerativeModel({
+      model: 'gemini-1.5-flash',
+      systemInstruction: SYSTEM_PROMPT,
     });
 
-    for await (const chunk of stream) {
-      const content = chunk.choices[0]?.delta?.content || '';
+    const chat = model.startChat({
+      history: chatHistory,
+      generationConfig: {
+        maxOutputTokens: 500,
+        temperature: 0.7,
+      },
+    });
+
+    const result = await chat.sendMessageStream(message);
+
+    let assistantMessage = '';
+    for await (const chunk of result.stream) {
+      const content = chunk.text();
       if (content) {
         assistantMessage += content;
         res.write(`data: ${JSON.stringify({ content })}\n\n`);
