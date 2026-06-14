@@ -82,7 +82,7 @@ router.post('/message', rateLimitMiddleware, async (req, res) => {
     res.setHeader('Connection', 'keep-alive');
 
     const model = genAI.getGenerativeModel({
-      model: 'gemini-1.5-flash',
+      model: 'gemini-2.0-flash',
       systemInstruction: SYSTEM_PROMPT,
     });
 
@@ -115,7 +115,7 @@ router.post('/message', rateLimitMiddleware, async (req, res) => {
     res.end();
   } catch (error) {
     console.error('Message error:', error);
-    res.status(500).json({ error: 'Failed to process message', detail: error?.message || String(error) });
+    res.status(500).json({ error: 'Failed to process message' });
   }
 });
 
