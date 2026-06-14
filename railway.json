@@ -1,0 +1,66 @@
+{
+  "$schema": "https://railway.app/railway.schema.json",
+  "name": "AI Chatbot",
+  "description": "Production-ready AI chatbot for e-commerce - streaming responses, conversation history, rate limiting",
+  "keywords": ["chatbot", "ai", "openai", "customer-support", "ecommerce"],
+  "priority": 1,
+  "services": {
+    "ai-chatbot": {
+      "name": "AI Chatbot",
+      "icon": "https://cdn-icons-png.flaticon.com/512/4436/4436481.png",
+      "numReplicas": 1,
+      "variables": {
+        "OPENAI_API_KEY": {
+          "description": "Your OpenAI API key (get from https://platform.openai.com/api-keys)",
+          "reference": null
+        },
+        "NODE_ENV": {
+          "description": "Environment",
+          "value": "production"
+        },
+        "PORT": {
+          "description": "Server port",
+          "value": "3000"
+        }
+      }
+    },
+    "postgres": {
+      "name": "PostgreSQL",
+      "icon": "https://upload.wikimedia.org/wikipedia/commons/thumb/9/93/PostgreSQL_logo%2C_sans_text.svg/1200px-PostgreSQL_logo%2C_sans_text.svg.png",
+      "numReplicas": 1,
+      "variables": {
+        "PGDATABASE": {
+          "description": "Database name",
+          "value": "chatbot"
+        },
+        "PGUSER": {
+          "description": "Database user",
+          "value": "postgres"
+        }
+      }
+    },
+    "redis": {
+      "name": "Redis",
+      "icon": "https://redis.io/images/redis-logo.svg",
+      "numReplicas": 1,
+      "variables": {
+        "REDIS_URL": {
+          "description": "Redis URL",
+          "reference": null
+        }
+      }
+    }
+  },
+  "plugins": [
+    {
+      "name": "postgresql",
+      "config": {
+        "version": "15"
+      }
+    },
+    {
+      "name": "redis",
+      "config": {}
+    }
+  ]
+}
