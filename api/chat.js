@@ -115,7 +115,7 @@ router.post('/message', rateLimitMiddleware, async (req, res) => {
     res.end();
   } catch (error) {
     console.error('Message error:', error);
-    res.status(500).json({ error: 'Failed to process message' });
+    res.status(500).json({ error: 'Failed to process message', detail: error?.message || String(error) });
   }
 });
 
